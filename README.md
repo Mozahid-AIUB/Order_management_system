@@ -2,6 +2,8 @@
 
 A full-stack order management system with a promotion engine supporting percentage, fixed, and weight-based (slab) discounts.
 
+**Live demo:** http://194.233.85.160:3001 — sign in with `admin@mozahid.com` / `admin123`
+
 ## Tech Stack
 
 | Layer | Technology |
