@@ -51,3 +51,29 @@ export async function toggleProduct(id: string, isEnabled: boolean) {
     });
     return res.json();
 }
+
+export async function getPromotions() {
+    const res = await fetch(`${API_BASE_URL}/promotions`, {
+        headers: authHeaders(),
+    });
+    return res.json();
+}
+
+export async function createPromotion(data: any) {
+    const res = await fetch(`${API_BASE_URL}/promotions`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(data),
+    });
+    return res.json();
+}
+
+export async function updatePromotion(id: string, data: any) {
+    const res = await fetch(`${API_BASE_URL}/promotions/${id}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify(data),
+    });
+    return res.json();
+}
+
