@@ -30,3 +30,36 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+enum PromotionType {
+  PERCENTAGE
+  FIXED
+  WEIGHTED
+}
+
+model Promotion {
+  id              String        @id @default(uuid())
+  title           String
+  type            PromotionType
+  startDate       DateTime
+  endDate         DateTime
+  isEnabled       Boolean       @default(true)
+  percentageValue Decimal?      @db.Decimal(5, 2)
+  fixedValue      Decimal?      @db.Decimal(10, 2)
+  productId       String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  slabs           PromotionSlab[]
+}
+
+model PromotionSlab {
+  id              String    @id @default(uuid())
+  promotionId     String
+  promotion       Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  minWeight       Int
+  maxWeight       Int?
+  discountPerUnit Decimal   @db.Decimal(10, 2)
+  unitWeight      Int       @default(500)
+}
+
