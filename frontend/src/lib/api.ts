@@ -13,3 +13,41 @@ export async function loginRequest(email: string, password: string) {
 
     return response.json();
 }
+
+function authHeaders() {
+    const token = localStorage.getItem("accessToken");
+    return {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+    };
+}
+
+export async function getProducts() {
+    const res = await fetch(`${API_BASE_URL}/products`, {
+        headers: authHeaders(),
+    });
+    return res.json();
+}
+
+export async function createProduct(data: {
+    name: string;
+    description?: string;
+    price: number;
+    weight: number;
+}) {
+    const res = await fetch(`${API_BASE_URL}/products`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(data),
+    });
+    return res.json();
+}
+
+export async function toggleProduct(id: string, isEnabled: boolean) {
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ isEnabled }),
+    });
+    return res.json();
+}
