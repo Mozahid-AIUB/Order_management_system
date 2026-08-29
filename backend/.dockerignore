@@ -1,5 +1,8 @@
 node_modules
 dist
+dist-seed
+# A stale build cache makes tsc skip emitting JS inside the image.
+*.tsbuildinfo
 .env
 .env.*
 npm-debug.log*
