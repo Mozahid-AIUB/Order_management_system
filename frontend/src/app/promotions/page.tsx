@@ -48,6 +48,11 @@ export default function PromotionsPage() {
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
 
+        if (!title || !startDate || !endDate || !productId) {
+            alert("Please fill in Title, Product, Start Date, and End Date");
+            return;
+        }
+
         const payload: any = {
             title,
             type,
