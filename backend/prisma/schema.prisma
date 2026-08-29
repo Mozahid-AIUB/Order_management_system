@@ -62,4 +62,26 @@ model PromotionSlab {
   discountPerUnit Decimal   @db.Decimal(10, 2)
   unitWeight      Int       @default(500)
 }
+model Order {
+  id            String      @id @default(uuid())
+  customerName  String
+  customerPhone String
+  subtotal      Decimal     @db.Decimal(10, 2)
+  totalDiscount Decimal     @db.Decimal(10, 2)
+  grandTotal    Decimal     @db.Decimal(10, 2)
+  createdAt     DateTime    @default(now())
+
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id              String   @id @default(uuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String
+  quantity        Int
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  discountApplied Decimal  @db.Decimal(10, 2) @default(0)
+  lineTotal       Decimal  @db.Decimal(10, 2)
+}
 
