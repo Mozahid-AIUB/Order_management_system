@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+
+/** A counter order never runs to five figures of one item. */
+const MAX_QUANTITY = 9999;
 
 @Injectable()
 export class OrdersService {
@@ -46,6 +49,25 @@ export class OrdersService {
         customerPhone: string;
         items: { productId: string; quantity: number }[];
     }) {
+        if (!data.customerName?.trim() || !data.customerPhone?.trim()) {
+            throw new BadRequestException('Customer name and phone are required');
+        }
+
+        if (!Array.isArray(data.items) || data.items.length === 0) {
+            throw new BadRequestException('An order needs at least one item');
+        }
+
+        for (const item of data.items) {
+            if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+                throw new BadRequestException('Quantity must be a whole number of 1 or more');
+            }
+            if (item.quantity > MAX_QUANTITY) {
+                throw new BadRequestException(
+                    `Quantity cannot exceed ${MAX_QUANTITY} per item`,
+                );
+            }
+        }
+
         const productIds = data.items.map((item) => item.productId);
         const now = new Date();
 

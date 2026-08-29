@@ -39,6 +39,9 @@ type Priced = {
     trace: string | null;
 };
 
+/** A counter order never runs to five figures of one item. */
+const MAX_QUANTITY = 9999;
+
 const tk = (n: number) =>
     n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -144,13 +147,14 @@ export default function OrdersPage() {
     }
 
     function setQuantity(productId: string, quantity: number) {
-        if (quantity <= 0) {
+        if (!Number.isFinite(quantity) || quantity <= 0) {
             setCart(cart.filter((line) => line.productId !== productId));
             return;
         }
+        const clamped = Math.min(Math.floor(quantity), MAX_QUANTITY);
         setCart(
             cart.map((line) =>
-                line.productId === productId ? { ...line, quantity } : line,
+                line.productId === productId ? { ...line, quantity: clamped } : line,
             ),
         );
     }
@@ -286,12 +290,13 @@ export default function OrdersPage() {
                                                 <input
                                                     type="number"
                                                     min={0}
+                                                    max={MAX_QUANTITY}
                                                     aria-label={`Quantity for ${row.product.name}`}
                                                     value={row.line.quantity}
                                                     onChange={(e) =>
                                                         setQuantity(row.line.productId, Number(e.target.value))
                                                     }
-                                                    className="field tnum w-16 text-right"
+                                                    className="field tnum w-20 text-right"
                                                 />
                                                 <span className="tnum w-20 text-right text-sm">
                                                     {tk(row.amount)}
