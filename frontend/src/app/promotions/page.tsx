@@ -42,6 +42,24 @@ function describeReward(promo: Promotion): string {
     return `${promo.slabs.length} weight slabs`;
 }
 
+type Status = "running" | "paused" | "scheduled" | "expired";
+
+/** Paused beats dates: an admin switching it off is the clearer signal. */
+function statusOf(promo: Promotion): Status {
+    if (!promo.isEnabled) return "paused";
+    const now = new Date();
+    if (new Date(promo.startDate) > now) return "scheduled";
+    if (new Date(promo.endDate) < now) return "expired";
+    return "running";
+}
+
+const STATUS_STYLE: Record<Status, string> = {
+    running: "bg-stamp-soft text-stamp",
+    paused: "bg-flag-soft text-flag",
+    scheduled: "bg-paper text-ink-soft",
+    expired: "bg-paper text-ink-soft",
+};
+
 export default function PromotionsPage() {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
@@ -60,6 +78,9 @@ export default function PromotionsPage() {
     const [editTitle, setEditTitle] = useState("");
     const [editStart, setEditStart] = useState("");
     const [editEnd, setEditEnd] = useState("");
+
+    const [formOpen, setFormOpen] = useState(false);
+    const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
@@ -153,17 +174,27 @@ export default function PromotionsPage() {
 
     return (
         <main className="mx-auto w-full max-w-5xl px-6 py-8">
-            <header className="mb-6">
-                <p className="label mb-1">Pricing rules</p>
-                <h1 className="text-xl font-semibold tracking-tight">Promotions</h1>
-                <p className="mt-1 text-sm text-ink-soft">
-                    Once a promotion is running, only its title and dates can change.
-                </p>
+            <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p className="label mb-1">Pricing rules</p>
+                    <h1 className="text-xl font-semibold tracking-tight">Promotions</h1>
+                    <p className="mt-1 text-sm text-ink-soft">
+                        Once a promotion is running, only its title and dates can change.
+                    </p>
+                </div>
+
+                <button
+                    onClick={() => setFormOpen((v) => !v)}
+                    className="btn btn-primary"
+                    aria-expanded={formOpen}
+                >
+                    {formOpen ? "Close" : "New promotion"}
+                </button>
             </header>
 
             <form
                 onSubmit={handleCreate}
-                className="mb-8 rounded-lg border border-rule bg-card p-5"
+                className={`mb-6 rounded-lg border border-rule bg-card p-5 ${formOpen ? "" : "hidden"}`}
             >
                 <p className="label mb-3">Create a promotion</p>
 
@@ -312,8 +343,32 @@ export default function PromotionsPage() {
                 </button>
             </form>
 
+            {/* Filter by lifecycle - paused and expired rules stay visible but out of the way. */}
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+                {(["all", "running", "paused", "scheduled", "expired"] as const).map((s) => {
+                    const count =
+                        s === "all"
+                            ? promotions.length
+                            : promotions.filter((p) => statusOf(p) === s).length;
+                    return (
+                        <button
+                            key={s}
+                            onClick={() => setStatusFilter(s)}
+                            className={`rounded px-3 py-1.5 text-sm capitalize transition-colors ${statusFilter === s
+                                ? "bg-stamp text-white"
+                                : "border border-rule bg-card text-ink-soft hover:text-ink"
+                                }`}
+                        >
+                            {s} <span className="tnum opacity-70">{count}</span>
+                        </button>
+                    );
+                })}
+            </div>
+
             <div className="flex flex-col gap-3">
-                {promotions.map((promo) => (
+                {promotions
+                    .filter((p) => statusFilter === "all" || statusOf(p) === statusFilter)
+                    .map((promo) => (
                     <article
                         key={promo.id}
                         className="rounded-lg border border-rule bg-card p-5"
@@ -368,13 +423,11 @@ export default function PromotionsPage() {
                                         <div className="flex items-center gap-2">
                                             <h2 className="font-medium">{promo.title}</h2>
                                             <span
-                                                className={`rounded px-2 py-0.5 text-xs font-medium ${promo.isEnabled
-                                                    ? "bg-stamp-soft text-stamp"
-                                                    : "bg-flag-soft text-flag"
-                                                    }`}
+                                                className={`rounded px-2 py-0.5 text-xs font-medium capitalize ${STATUS_STYLE[statusOf(promo)]}`}
                                             >
-                                                {promo.isEnabled ? "Running" : "Paused"}
+                                                {statusOf(promo)}
                                             </span>
+                                            <span className="label">{promo.type.toLowerCase()}</span>
                                         </div>
                                         <p className="mt-1 text-sm text-ink-soft">
                                             {productName(promo.productId)} · {describeReward(promo)}
@@ -431,10 +484,19 @@ export default function PromotionsPage() {
                 ))}
 
                 {promotions.length === 0 && (
-                    <p className="rounded-lg border border-rule bg-card px-4 py-10 text-center text-sm text-ink-soft">
+                    <p className="rounded-lg border border-rule bg-card px-4 py-12 text-center text-sm text-ink-soft">
                         No promotions yet. Create one above.
                     </p>
                 )}
+
+                {promotions.length > 0 &&
+                    promotions.filter(
+                        (p) => statusFilter === "all" || statusOf(p) === statusFilter,
+                    ).length === 0 && (
+                        <p className="rounded-lg border border-rule bg-card px-4 py-12 text-center text-sm text-ink-soft">
+                            Nothing {statusFilter} right now.
+                        </p>
+                    )}
             </div>
         </main>
     );
