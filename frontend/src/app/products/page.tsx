@@ -171,7 +171,7 @@ export default function ProductsPage() {
                                             onChange={(e) =>
                                                 setEditDraft({ ...editDraft, price: e.target.value })
                                             }
-                                            className="field tnum text-right"
+                                            className="field tnum"
                                         />
                                     </td>
                                     <td className="px-4 py-3">
@@ -181,7 +181,7 @@ export default function ProductsPage() {
                                             onChange={(e) =>
                                                 setEditDraft({ ...editDraft, weight: e.target.value })
                                             }
-                                            className="field tnum text-right"
+                                            className="field tnum"
                                         />
                                     </td>
                                     <td className="px-4 py-3 text-ink-soft">—</td>

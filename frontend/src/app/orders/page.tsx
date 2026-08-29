@@ -296,7 +296,7 @@ export default function OrdersPage() {
                                                     onChange={(e) =>
                                                         setQuantity(row.line.productId, Number(e.target.value))
                                                     }
-                                                    className="field tnum w-20 text-right"
+                                                    className="field tnum w-20 text-center"
                                                 />
                                                 <span className="tnum w-20 text-right text-sm">
                                                     {tk(row.amount)}
