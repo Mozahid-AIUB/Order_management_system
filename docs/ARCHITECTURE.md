@@ -30,8 +30,8 @@ order-management-system/
 │   ├── lib/
 │   │   ├── api-client.ts       # fetch wrapper, attaches JWT
 │   │   └── auth.ts             # token storage helpers
-│   ├── components/
-│   └── middleware.ts           # route protection (redirect if no token)
+│   └── components/
+│       └── Navbar.tsx          # nav + sign out (hidden on /login)
 │
 ├── backend/                     # NestJS app
 │   ├── src/
@@ -91,7 +91,7 @@ order-management-system/
 ```
 
 - Frontend কখনো সরাসরি DB ছোঁবে না। সব সময় NestJS API-এর মাধ্যমে data আসবে/যাবে।
-- Authentication ছাড়া কোনো protected route (Products/Promotions/Orders) access করা যাবে না — backend এ `JwtAuthGuard`, frontend এ Next.js `middleware.ts` দুই জায়গাতেই check হবে।
+- Authentication ছাড়া কোনো protected route (Products/Promotions/Orders) access করা যাবে না — আসল সুরক্ষা backend এর `JwtAuthGuard`, আর প্রতিটা frontend পেজ লোড হওয়ার সময় token আছে কিনা দেখে `/login` এ পাঠিয়ে দেয়।
 
 ---
 

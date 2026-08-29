@@ -118,7 +118,7 @@ npm run dev           # http://localhost:3001
 
 Open http://localhost:3001 and sign in with the seeded admin credentials.
 
-> The backend enables CORS for `http://localhost:3001`. If Next.js starts on a different port, update `app.enableCors` in `backend/src/main.ts`.
+> The backend enables CORS for `http://localhost:3001` by default. If Next.js starts on a different port, set `CORS_ORIGIN` in `backend/.env`.
 
 ## Running with Docker
 
@@ -156,6 +156,8 @@ docker compose up --build -d
 ```
 
 Open ports 3000 and 3001 on the server's firewall. `NEXT_PUBLIC_API_URL` is compiled into the client bundle, so changing it later means rebuilding the frontend image.
+
+The live demo runs this way on a Contabo VPS, deployed through [Coolify](https://coolify.io) with the Docker Compose build pack — the same `docker-compose.yml` in this repository, with the variables above supplied by the panel. Pushing to `main` triggers a rebuild.
 
 ## API Endpoints
 
