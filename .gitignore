@@ -1,0 +1,8 @@
+# Local compose overrides and secrets
+.env
+.env.*
+!.env.example
+
+# OS noise
+.DS_Store
+Thumbs.db

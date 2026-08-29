@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://localhost:3000';
+// The browser calls the API directly, so this is the address as seen from
+// the host machine - not the Docker service name.
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export async function loginRequest(email: string, password: string) {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {

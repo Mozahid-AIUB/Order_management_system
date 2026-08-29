@@ -118,6 +118,43 @@ Open http://localhost:3001 and sign in with the seeded admin credentials.
 
 > The backend enables CORS for `http://localhost:3001`. If Next.js starts on a different port, update `app.enableCors` in `backend/src/main.ts`.
 
+## Running with Docker
+
+The compose file starts PostgreSQL, the API, and the web app together. Migrations run and the admin is seeded automatically on the first boot.
+
+```bash
+docker compose up --build
+```
+
+Then open http://localhost:3001 and sign in with `admin@mozahid.com` / `admin123`.
+
+Postgres is published on port **5433** so it does not clash with a PostgreSQL instance already running on 5432.
+
+To stop everything and wipe the database volume:
+
+```bash
+docker compose down -v
+```
+
+### Deploying to a server
+
+Two addresses are baked in for the browser, so they must point at the server rather than localhost. Copy `.env.example` to `.env` and set:
+
+```env
+JWT_SECRET=a-long-random-string
+POSTGRES_PASSWORD=something-private
+NEXT_PUBLIC_API_URL=http://YOUR_SERVER_IP:3000
+CORS_ORIGIN=http://YOUR_SERVER_IP:3001
+```
+
+Then build and start:
+
+```bash
+docker compose up --build -d
+```
+
+Open ports 3000 and 3001 on the server's firewall. `NEXT_PUBLIC_API_URL` is compiled into the client bundle, so changing it later means rebuilding the frontend image.
+
 ## API Endpoints
 
 All endpoints except `POST /auth/login` require an `Authorization: Bearer <token>` header.

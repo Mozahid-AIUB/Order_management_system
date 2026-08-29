@@ -1,23 +1,27 @@
 // prisma/seed.ts
-//import { PrismaClient } from '../generated/prisma';
 import * as bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 
-
 const prisma = new PrismaClient();
 
-async function main() {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? 'admin@mozahid.com';
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'admin123';
 
-    const admin = await prisma.admin.create({
-        data: {
+async function main() {
+    const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
+
+    // upsert keeps this safe to run on every container start.
+    const admin = await prisma.admin.upsert({
+        where: { email: ADMIN_EMAIL },
+        update: {},
+        create: {
             name: 'Admin',
-            email: 'admin@mozahid.com',
+            email: ADMIN_EMAIL,
             password: hashedPassword,
         },
     });
 
-    console.log('Seeded admin:', admin);
+    console.log('Admin ready:', admin.email);
 }
 
 main()
