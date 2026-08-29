@@ -77,3 +77,18 @@ export async function updatePromotion(id: string, data: any) {
     return res.json();
 }
 
+export async function getOrders() {
+    const res = await fetch(`${API_BASE_URL}/orders`, {
+        headers: authHeaders(),
+    });
+    return res.json();
+}
+
+export async function createOrder(data: any) {
+    const res = await fetch(`${API_BASE_URL}/orders`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(data),
+    });
+    return res.json();
+}
