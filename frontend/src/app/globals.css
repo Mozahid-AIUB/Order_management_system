@@ -1,26 +1,114 @@
 @import "tailwindcss";
 
+/*
+  Counter-terminal palette: paper stock, ledger ink, stamp green.
+  Numbers are set in mono with tabular figures so columns line up
+  the way they do on a printed receipt.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f5f4f0;
+  --card: #ffffff;
+  --ink: #14181f;
+  --ink-soft: #5c6570;
+  --rule: #e3e1da;
+  --stamp: #1f5f3f;
+  --stamp-soft: #e8f1ec;
+  --flag: #b4442a;
+  --flag-soft: #fbeeea;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-rule: var(--rule);
+  --color-stamp: var(--stamp);
+  --color-stamp-soft: var(--stamp-soft);
+  --color-flag: var(--flag);
+  --color-flag-soft: var(--flag-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Money and weights align column-wise, like a receipt. */
+.tnum {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Shared field + control styles keep every form consistent. */
+.field {
+  width: 100%;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--ink);
+  outline: none;
+}
+
+.field::placeholder {
+  color: var(--ink-soft);
+}
+
+.field:focus-visible {
+  border-color: var(--stamp);
+  box-shadow: 0 0 0 3px var(--stamp-soft);
+}
+
+.btn {
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--stamp);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--stamp);
+  color: #ffffff;
+  border: 1px solid var(--stamp);
+}
+
+.btn-primary:hover {
+  background: #174c32;
+}
+
+.btn-quiet {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+}
+
+.btn-quiet:hover {
+  border-color: var(--ink-soft);
+}
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

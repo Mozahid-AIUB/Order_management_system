@@ -43,13 +43,26 @@ export async function createProduct(data: {
     return res.json();
 }
 
-export async function toggleProduct(id: string, isEnabled: boolean) {
+export async function updateProduct(
+    id: string,
+    data: Partial<{
+        name: string;
+        description: string;
+        price: number;
+        weight: number;
+        isEnabled: boolean;
+    }>,
+) {
     const res = await fetch(`${API_BASE_URL}/products/${id}`, {
         method: "PATCH",
         headers: authHeaders(),
-        body: JSON.stringify({ isEnabled }),
+        body: JSON.stringify(data),
     });
     return res.json();
+}
+
+export function toggleProduct(id: string, isEnabled: boolean) {
+    return updateProduct(id, { isEnabled });
 }
 
 export async function getPromotions() {
