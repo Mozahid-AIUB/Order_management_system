@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getProducts, getPromotions, getOrders, createOrder } from "@/lib/api";
+import Link from "next/link";
+import { getProducts, getPromotions, createOrder } from "@/lib/api";
 
 type Product = {
     id: string;
@@ -109,17 +110,14 @@ function priceDiscount(
 export default function OrdersPage() {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
-    /** Past orders can reference products that were later hidden. */
-    const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [promotions, setPromotions] = useState<Promotion[]>([]);
-    const [orders, setOrders] = useState<any[]>([]);
-    const [openOrder, setOpenOrder] = useState<string | null>(null);
 
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
     const [cart, setCart] = useState<CartLine[]>([]);
     const [query, setQuery] = useState("");
     const [busy, setBusy] = useState(false);
+    const [placed, setPlaced] = useState<{ name: string; total: number } | null>(null);
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
@@ -131,19 +129,10 @@ export default function OrdersPage() {
     }, []);
 
     async function loadData() {
-        const [prods, promos, ords] = await Promise.all([
-            getProducts(),
-            getPromotions(),
-            getOrders(),
-        ]);
-        setAllProducts(prods);
+        const [prods, promos] = await Promise.all([getProducts(), getPromotions()]);
         setProducts(prods.filter((p: Product) => p.isEnabled));
         setPromotions(promos);
-        setOrders(ords);
     }
-
-    const nameOf = (productId: string) =>
-        allProducts.find((p) => p.id === productId)?.name ?? "Removed product";
 
     const runningFor = useMemo(() => {
         const map = new Map<string, Promotion>();
@@ -239,7 +228,8 @@ export default function OrdersPage() {
         }
 
         setBusy(true);
-        await createOrder({ customerName, customerPhone, items: cart });
+        const saved = await createOrder({ customerName, customerPhone, items: cart });
+        setPlaced({ name: customerName, total: Number(saved.grandTotal) });
         setCustomerName("");
         setCustomerPhone("");
         setCart([]);
@@ -250,13 +240,36 @@ export default function OrdersPage() {
 
     return (
         <main className="mx-auto w-full max-w-6xl px-6 py-8">
-            <header className="mb-6">
-                <p className="label mb-1">Counter</p>
-                <h1 className="text-xl font-semibold tracking-tight">New order</h1>
-                <p className="mt-1 text-sm text-ink-soft">
-                    Tap a product to add it. Discounts update as you change quantities.
-                </p>
+            <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p className="label mb-1">Counter</p>
+                    <h1 className="text-xl font-semibold tracking-tight">New order</h1>
+                    <p className="mt-1 text-sm text-ink-soft">
+                        Search and press Enter, or tap a product. Discounts update live.
+                    </p>
+                </div>
+
+                <Link href="/orders/history" className="btn btn-quiet">
+                    View past orders
+                </Link>
             </header>
+
+            {placed && (
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stamp/30 bg-stamp-soft px-4 py-3">
+                    <p className="text-sm text-stamp">
+                        Order saved for <strong>{placed.name}</strong> —{" "}
+                        <span className="tnum">{tk(placed.total)} tk</span> collected.
+                    </p>
+                    <div className="flex gap-2">
+                        <Link href="/orders/history" className="btn btn-quiet">
+                            Open ledger
+                        </Link>
+                        <button onClick={() => setPlaced(null)} className="btn btn-quiet">
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] lg:items-start">
                 {/* Product picker */}
@@ -467,118 +480,6 @@ export default function OrdersPage() {
                 </form>
             </div>
 
-            <section className="mt-10">
-                <div className="mb-3 flex items-baseline justify-between">
-                    <h2 className="label">Recent orders</h2>
-                    <span className="tnum text-xs text-ink-soft">{orders.length} total</span>
-                </div>
-
-                <div className="overflow-hidden rounded-lg border border-rule bg-card">
-                    <div className="max-h-[24rem] overflow-auto">
-                        <table className="w-full min-w-[36rem] text-sm">
-                            <thead className="sticky top-0 z-10 bg-card">
-                                <tr className="border-b border-rule text-left">
-                                    <th className="label px-4 py-3 font-semibold">Customer</th>
-                                    <th className="label px-4 py-3 font-semibold">Phone</th>
-                                    <th className="label px-4 py-3 text-right font-semibold">Subtotal</th>
-                                    <th className="label px-4 py-3 text-right font-semibold">Discount</th>
-                                    <th className="label px-4 py-3 text-right font-semibold">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {orders.map((order) => {
-                                    const open = openOrder === order.id;
-                                    return (
-                                        <Fragment key={order.id}>
-                                            <tr
-                                                onClick={() => setOpenOrder(open ? null : order.id)}
-                                                className="cursor-pointer border-b border-rule transition-colors hover:bg-paper"
-                                            >
-                                                <td className="px-4 py-3">
-                                                    <span className="mr-2 inline-block w-3 text-ink-soft">
-                                                        {open ? "−" : "+"}
-                                                    </span>
-                                                    <span className="font-medium">{order.customerName}</span>
-                                                    <span className="tnum ml-2 text-xs text-ink-soft">
-                                                        {order.items?.length ?? 0} item
-                                                        {order.items?.length === 1 ? "" : "s"}
-                                                    </span>
-                                                </td>
-                                                <td className="tnum px-4 py-3 text-ink-soft">
-                                                    {order.customerPhone}
-                                                </td>
-                                                <td className="tnum px-4 py-3 text-right">{order.subtotal}</td>
-                                                <td className="tnum px-4 py-3 text-right text-stamp">
-                                                    −{order.totalDiscount}
-                                                </td>
-                                                <td className="tnum px-4 py-3 text-right font-medium">
-                                                    {order.grandTotal}
-                                                </td>
-                                            </tr>
-
-                                            {open && (
-                                                <tr className="border-b border-rule bg-paper">
-                                                    <td colSpan={5} className="px-4 py-3">
-                                                        <p className="label mb-2">
-                                                            Placed {new Date(order.createdAt).toLocaleString()}
-                                                        </p>
-                                                        <table className="tnum w-full text-xs">
-                                                            <thead>
-                                                                <tr className="text-left text-ink-soft">
-                                                                    <th className="pb-1 font-normal">Product</th>
-                                                                    <th className="pb-1 text-right font-normal">Qty</th>
-                                                                    <th className="pb-1 text-right font-normal">Unit</th>
-                                                                    <th className="pb-1 text-right font-normal">
-                                                                        Discount
-                                                                    </th>
-                                                                    <th className="pb-1 text-right font-normal">Line</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {(order.items ?? []).map((item: any) => (
-                                                                    <tr key={item.id}>
-                                                                        <td className="py-0.5 font-sans">
-                                                                            {nameOf(item.productId)}
-                                                                        </td>
-                                                                        <td className="py-0.5 text-right">
-                                                                            {item.quantity}
-                                                                        </td>
-                                                                        <td className="py-0.5 text-right">
-                                                                            {item.unitPrice}
-                                                                        </td>
-                                                                        <td className="py-0.5 text-right text-stamp">
-                                                                            {Number(item.discountApplied) > 0
-                                                                                ? `−${item.discountApplied}`
-                                                                                : "—"}
-                                                                        </td>
-                                                                        <td className="py-0.5 text-right">
-                                                                            {item.lineTotal}
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </Fragment>
-                                    );
-                                })}
-                                {orders.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan={5}
-                                            className="px-4 py-12 text-center text-sm text-ink-soft"
-                                        >
-                                            No orders yet.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
         </main>
     );
 }
