@@ -118,6 +118,7 @@ export default function OrdersPage() {
     const [customerPhone, setCustomerPhone] = useState("");
     const [cart, setCart] = useState<CartLine[]>([]);
     const [query, setQuery] = useState("");
+    const [category, setCategory] = useState("All");
     const [busy, setBusy] = useState(false);
     const [placed, setPlaced] = useState<{ name: string; total: number } | null>(null);
 
@@ -147,15 +148,24 @@ export default function OrdersPage() {
         return map;
     }, [promotions]);
 
+    const categories = useMemo(() => {
+        const seen = new Set(products.map((p) => categoryOf(p.description) || "Other"));
+        return ["All", ...Array.from(seen).sort()];
+    }, [products]);
+
     const searchResults = useMemo(() => {
         const q = query.trim().toLowerCase();
-        if (!q) return products;
-        return products.filter(
-            (p) =>
+        return products.filter((p) => {
+            if (category !== "All" && (categoryOf(p.description) || "Other") !== category) {
+                return false;
+            }
+            if (!q) return true;
+            return (
                 p.name.toLowerCase().includes(q) ||
-                (p.description ?? "").toLowerCase().includes(q),
-        );
-    }, [products, query]);
+                (p.description ?? "").toLowerCase().includes(q)
+            );
+        });
+    }, [products, query, category]);
 
     /** Grouped by category so a 70-item catalogue reads like shelves, not a phone book. */
     const grouped = useMemo(() => {
@@ -299,6 +309,19 @@ export default function OrdersPage() {
                             }}
                             className="field"
                         />
+
+                        <select
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            aria-label="Filter by category"
+                            className="field mt-2"
+                        >
+                            {categories.map((c) => (
+                                <option key={c} value={c}>
+                                    {c === "All" ? "All categories" : c}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Long catalogue, so the list scrolls rather than the page. */}
