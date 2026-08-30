@@ -154,6 +154,18 @@ export default function OrdersPage() {
         );
     }, [products, query]);
 
+    /** Grouped by category so a 70-item catalogue reads like shelves, not a phone book. */
+    const grouped = useMemo(() => {
+        const map = new Map<string, Product[]>();
+        for (const p of searchResults) {
+            const key = categoryOf(p.description) || "Other";
+            const bucket = map.get(key);
+            if (bucket) bucket.push(p);
+            else map.set(key, [p]);
+        }
+        return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+    }, [searchResults]);
+
     function addToCart(productId: string) {
         const existing = cart.find((line) => line.productId === productId);
         setCart(
@@ -251,61 +263,77 @@ export default function OrdersPage() {
                         </div>
                         <input
                             type="search"
-                            placeholder="Search the catalogue…"
+                            placeholder="Search, then press Enter"
                             value={query}
+                            autoFocus
                             onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                // At a counter you type a few letters and hit Enter.
+                                if (e.key === "Enter" && searchResults.length > 0) {
+                                    e.preventDefault();
+                                    addToCart(searchResults[0].id);
+                                    setQuery("");
+                                }
+                            }}
                             className="field"
                         />
                     </div>
 
                     {/* Long catalogue, so the list scrolls rather than the page. */}
-                    <div className="max-h-[26rem] overflow-auto p-2">
+                    <div className="max-h-[28rem] overflow-auto">
                         {searchResults.length === 0 ? (
-                            <p className="px-2 py-10 text-center text-sm text-ink-soft">
+                            <p className="px-4 py-12 text-center text-sm text-ink-soft">
                                 {products.length === 0
                                     ? "No products are on sale. Enable one under Products."
                                     : "Nothing matches that search."}
                             </p>
                         ) : (
-                            <ul className="flex flex-col">
-                                {searchResults.map((p) => {
-                                    const inCart = cart.find((l) => l.productId === p.id);
-                                    const promo = runningFor.get(p.id);
-                                    return (
-                                        <li key={p.id}>
-                                            <button
-                                                onClick={() => addToCart(p.id)}
-                                                className="w-full rounded px-3 py-2.5 text-left transition-colors hover:bg-stamp-soft"
-                                            >
-                                                <div className="flex items-baseline justify-between gap-3">
-                                                    <span className="truncate text-sm font-medium">
-                                                        {p.name}
-                                                        {inCart && (
-                                                            <span className="tnum ml-2 rounded bg-stamp px-1.5 py-0.5 text-xs text-white">
-                                                                {inCart.quantity}
+                            grouped.map(([category, items]) => (
+                                <section key={category}>
+                                    <h3 className="label sticky top-0 z-10 border-b border-rule bg-paper px-4 py-1.5">
+                                        {category}
+                                        <span className="tnum ml-2 opacity-60">{items.length}</span>
+                                    </h3>
+
+                                    <ul className="divide-y divide-rule/60">
+                                        {items.map((p) => {
+                                            const inCart = cart.find((l) => l.productId === p.id);
+                                            const promo = runningFor.get(p.id);
+                                            return (
+                                                <li key={p.id}>
+                                                    <button
+                                                        onClick={() => addToCart(p.id)}
+                                                        className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-stamp-soft"
+                                                    >
+                                                        <span className="min-w-0 flex-1">
+                                                            <span className="flex items-baseline gap-2">
+                                                                <span className="truncate text-sm">{p.name}</span>
+                                                                {inCart && (
+                                                                    <span className="tnum shrink-0 rounded bg-stamp px-1.5 text-xs text-white">
+                                                                        {inCart.quantity}
+                                                                    </span>
+                                                                )}
                                                             </span>
-                                                        )}
-                                                    </span>
-                                                    <span className="tnum shrink-0 text-sm">{p.price} tk</span>
-                                                </div>
-                                                <div className="mt-0.5 flex items-baseline justify-between gap-3">
-                                                    <span className="truncate text-xs uppercase tracking-wide text-ink-soft">
-                                                        {categoryOf(p.description)}
-                                                    </span>
-                                                    <span className="tnum shrink-0 text-xs text-ink-soft">
-                                                        {p.weight.toLocaleString()} g
-                                                    </span>
-                                                </div>
-                                                {promo && (
-                                                    <p className="mt-1 truncate text-xs text-stamp">
-                                                        {promo.title}
-                                                    </p>
-                                                )}
-                                            </button>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
+                                                            {promo && (
+                                                                <span className="block truncate text-xs text-stamp">
+                                                                    {promo.title}
+                                                                </span>
+                                                            )}
+                                                        </span>
+
+                                                        <span className="tnum shrink-0 text-right text-sm">
+                                                            {p.price}
+                                                            <span className="block text-xs text-ink-soft">
+                                                                {p.weight.toLocaleString()} g
+                                                            </span>
+                                                        </span>
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </section>
+                            ))
                         )}
                     </div>
                 </section>
