@@ -57,14 +57,14 @@ cd ../frontend && npm install
 
 **2. Create a database** named `order_management`.
 
-**3. Configure** `backend/.env`:
+**3. Configure**
 
-```env
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/order_management?schema=public"
-JWT_SECRET="any-long-random-string"
+```bash
+cd backend
+cp .env.example .env
 ```
 
-URL-encode special characters in the password — `@` becomes `%40`.
+Then set your PostgreSQL password in `DATABASE_URL`. URL-encode special characters — `@` becomes `%40`.
 
 **4. Migrate and seed**
 
