@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getProducts, getPromotions, getOrders, createOrder } from "@/lib/api";
 
@@ -109,8 +109,11 @@ function priceDiscount(
 export default function OrdersPage() {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
+    /** Past orders can reference products that were later hidden. */
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [promotions, setPromotions] = useState<Promotion[]>([]);
     const [orders, setOrders] = useState<any[]>([]);
+    const [openOrder, setOpenOrder] = useState<string | null>(null);
 
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
@@ -133,10 +136,14 @@ export default function OrdersPage() {
             getPromotions(),
             getOrders(),
         ]);
+        setAllProducts(prods);
         setProducts(prods.filter((p: Product) => p.isEnabled));
         setPromotions(promos);
         setOrders(ords);
     }
+
+    const nameOf = (productId: string) =>
+        allProducts.find((p) => p.id === productId)?.name ?? "Removed product";
 
     const runningFor = useMemo(() => {
         const map = new Map<string, Promotion>();
@@ -479,24 +486,84 @@ export default function OrdersPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {orders.map((order) => (
-                                    <tr
-                                        key={order.id}
-                                        className="border-b border-rule transition-colors last:border-0 hover:bg-paper"
-                                    >
-                                        <td className="px-4 py-3 font-medium">{order.customerName}</td>
-                                        <td className="tnum px-4 py-3 text-ink-soft">
-                                            {order.customerPhone}
-                                        </td>
-                                        <td className="tnum px-4 py-3 text-right">{order.subtotal}</td>
-                                        <td className="tnum px-4 py-3 text-right text-stamp">
-                                            −{order.totalDiscount}
-                                        </td>
-                                        <td className="tnum px-4 py-3 text-right font-medium">
-                                            {order.grandTotal}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {orders.map((order) => {
+                                    const open = openOrder === order.id;
+                                    return (
+                                        <Fragment key={order.id}>
+                                            <tr
+                                                onClick={() => setOpenOrder(open ? null : order.id)}
+                                                className="cursor-pointer border-b border-rule transition-colors hover:bg-paper"
+                                            >
+                                                <td className="px-4 py-3">
+                                                    <span className="mr-2 inline-block w-3 text-ink-soft">
+                                                        {open ? "−" : "+"}
+                                                    </span>
+                                                    <span className="font-medium">{order.customerName}</span>
+                                                    <span className="tnum ml-2 text-xs text-ink-soft">
+                                                        {order.items?.length ?? 0} item
+                                                        {order.items?.length === 1 ? "" : "s"}
+                                                    </span>
+                                                </td>
+                                                <td className="tnum px-4 py-3 text-ink-soft">
+                                                    {order.customerPhone}
+                                                </td>
+                                                <td className="tnum px-4 py-3 text-right">{order.subtotal}</td>
+                                                <td className="tnum px-4 py-3 text-right text-stamp">
+                                                    −{order.totalDiscount}
+                                                </td>
+                                                <td className="tnum px-4 py-3 text-right font-medium">
+                                                    {order.grandTotal}
+                                                </td>
+                                            </tr>
+
+                                            {open && (
+                                                <tr className="border-b border-rule bg-paper">
+                                                    <td colSpan={5} className="px-4 py-3">
+                                                        <p className="label mb-2">
+                                                            Placed {new Date(order.createdAt).toLocaleString()}
+                                                        </p>
+                                                        <table className="tnum w-full text-xs">
+                                                            <thead>
+                                                                <tr className="text-left text-ink-soft">
+                                                                    <th className="pb-1 font-normal">Product</th>
+                                                                    <th className="pb-1 text-right font-normal">Qty</th>
+                                                                    <th className="pb-1 text-right font-normal">Unit</th>
+                                                                    <th className="pb-1 text-right font-normal">
+                                                                        Discount
+                                                                    </th>
+                                                                    <th className="pb-1 text-right font-normal">Line</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {(order.items ?? []).map((item: any) => (
+                                                                    <tr key={item.id}>
+                                                                        <td className="py-0.5 font-sans">
+                                                                            {nameOf(item.productId)}
+                                                                        </td>
+                                                                        <td className="py-0.5 text-right">
+                                                                            {item.quantity}
+                                                                        </td>
+                                                                        <td className="py-0.5 text-right">
+                                                                            {item.unitPrice}
+                                                                        </td>
+                                                                        <td className="py-0.5 text-right text-stamp">
+                                                                            {Number(item.discountApplied) > 0
+                                                                                ? `−${item.discountApplied}`
+                                                                                : "—"}
+                                                                        </td>
+                                                                        <td className="py-0.5 text-right">
+                                                                            {item.lineTotal}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </Fragment>
+                                    );
+                                })}
                                 {orders.length === 0 && (
                                     <tr>
                                         <td
