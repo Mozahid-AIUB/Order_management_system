@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getProducts, getPromotions, createOrder } from "@/lib/api";
+import { getProducts, getPromotions, getOrders, createOrder } from "@/lib/api";
 
 type Product = {
     id: string;
@@ -111,6 +111,8 @@ export default function OrdersPage() {
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [promotions, setPromotions] = useState<Promotion[]>([]);
+    /** Just enough history to confirm the last few sales went through. */
+    const [recent, setRecent] = useState<any[]>([]);
 
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
@@ -129,9 +131,14 @@ export default function OrdersPage() {
     }, []);
 
     async function loadData() {
-        const [prods, promos] = await Promise.all([getProducts(), getPromotions()]);
+        const [prods, promos, ords] = await Promise.all([
+            getProducts(),
+            getPromotions(),
+            getOrders(),
+        ]);
         setProducts(prods.filter((p: Product) => p.isEnabled));
         setPromotions(promos);
+        setRecent(ords.slice(0, 3));
     }
 
     const runningFor = useMemo(() => {
@@ -475,6 +482,41 @@ export default function OrdersPage() {
                 </form>
             </div>
 
+            {recent.length > 0 && (
+                <section className="mt-8">
+                    <div className="mb-2 flex items-baseline justify-between">
+                        <h2 className="label">Just sold</h2>
+                        <Link href="/orders/history" className="text-xs text-ink-soft hover:text-ink">
+                            Full ledger →
+                        </Link>
+                    </div>
+
+                    <ul className="divide-y divide-rule rounded-lg border border-rule bg-card">
+                        {recent.map((order) => (
+                            <li
+                                key={order.id}
+                                className="flex items-baseline justify-between gap-4 px-4 py-2.5 text-sm"
+                            >
+                                <span className="min-w-0 truncate font-medium">
+                                    {order.customerName}
+                                </span>
+                                <span className="tnum shrink-0 text-xs text-ink-soft">
+                                    {new Date(order.createdAt).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    })}
+                                </span>
+                                <span className="tnum shrink-0 text-xs text-stamp">
+                                    −{order.totalDiscount}
+                                </span>
+                                <span className="tnum w-24 shrink-0 text-right font-medium">
+                                    {order.grandTotal}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
         </main>
     );
 }
