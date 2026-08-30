@@ -24,8 +24,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      {/* overflow-x-hidden keeps a wide table from pushing the whole page sideways. */}
-      <body className="flex min-h-full overflow-x-hidden">
+      {/*
+        overflow-x-hidden keeps a wide table from pushing the whole page sideways.
+        suppressHydrationWarning: browser extensions add attributes to <body>
+        before React hydrates, which otherwise reads as a mismatch.
+      */}
+      <body className="flex min-h-full overflow-x-hidden" suppressHydrationWarning>
         <Sidebar />
         <div className="min-w-0 flex-1">{children}</div>
       </body>

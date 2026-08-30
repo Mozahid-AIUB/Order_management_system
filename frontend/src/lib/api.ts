@@ -1,7 +1,16 @@
-// The browser calls the API directly, so this is the address as seen from
-// the host machine - not the Docker service name.
-const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+// The browser calls the API directly, so this is the address as seen from the
+// host machine - not the Docker service name. Deployments set the variable at
+// build time; locally we follow whatever host the page was opened from, so the
+// app also works over a LAN address.
+function resolveApiBase(): string {
+    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    if (typeof window !== 'undefined') {
+        return `${window.location.protocol}//${window.location.hostname}:3000`;
+    }
+    return 'http://localhost:3000';
+}
+
+const API_BASE_URL = resolveApiBase();
 
 export async function loginRequest(email: string, password: string) {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
