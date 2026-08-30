@@ -239,19 +239,13 @@ export default function OrdersPage() {
     }
 
     return (
-        <main className="mx-auto w-full max-w-6xl px-6 py-8">
-            <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <p className="label mb-1">Counter</p>
-                    <h1 className="text-xl font-semibold tracking-tight">New order</h1>
-                    <p className="mt-1 text-sm text-ink-soft">
-                        Search and press Enter, or tap a product. Discounts update live.
-                    </p>
-                </div>
-
-                <Link href="/orders/history" className="btn btn-quiet">
-                    View past orders
-                </Link>
+        <main className="mx-auto w-full max-w-5xl px-6 py-8">
+            <header className="mb-6">
+                <p className="label mb-1">Counter</p>
+                <h1 className="text-xl font-semibold tracking-tight">New order</h1>
+                <p className="mt-1 text-sm text-ink-soft">
+                    Search and press Enter, or tap a product. Discounts update live.
+                </p>
             </header>
 
             {placed && (
@@ -271,9 +265,10 @@ export default function OrdersPage() {
                 </div>
             )}
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] lg:items-start">
+            {/* Two columns only once the sidebar still leaves room for both. */}
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] xl:items-start">
                 {/* Product picker */}
-                <section className="rounded-lg border border-rule bg-card">
+                <section className="min-w-0 rounded-lg border border-rule bg-card">
                     <div className="border-b border-rule p-4">
                         <div className="mb-3 flex items-baseline justify-between">
                             <p className="label">On sale</p>
@@ -361,7 +356,7 @@ export default function OrdersPage() {
                 {/* Receipt */}
                 <form
                     onSubmit={handleSubmit}
-                    className="rounded-lg border border-rule bg-card lg:sticky lg:top-6"
+                    className="min-w-0 rounded-lg border border-rule bg-card xl:sticky xl:top-6"
                 >
                     <div className="border-b border-rule p-5">
                         <p className="label mb-3">Customer</p>

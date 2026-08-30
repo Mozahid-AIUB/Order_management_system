@@ -2,7 +2,6 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { getOrders, getProducts } from "@/lib/api";
 
 type Product = { id: string; name: string };
@@ -78,18 +77,12 @@ export default function OrderHistoryPage() {
 
     return (
         <main className="mx-auto w-full max-w-5xl px-6 py-8">
-            <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <p className="label mb-1">Ledger</p>
-                    <h1 className="text-xl font-semibold tracking-tight">Orders</h1>
-                    <p className="mt-1 text-sm text-ink-soft">
-                        Open a row to see what was in the basket and how each discount landed.
-                    </p>
-                </div>
-
-                <Link href="/orders" className="btn btn-primary">
-                    Take a new order
-                </Link>
+            <header className="mb-6">
+                <p className="label mb-1">Ledger</p>
+                <h1 className="text-xl font-semibold tracking-tight">Orders</h1>
+                <p className="mt-1 text-sm text-ink-soft">
+                    Open a row to see what was in the basket and how each discount landed.
+                </p>
             </header>
 
             <div className="mb-4 grid gap-3 sm:grid-cols-3">
