@@ -1,0 +1,221 @@
+### Order Management System - API requests
+#
+# Open this file in VS Code with the "REST Client" extension (humao.rest-client)
+# and click "Send Request" above any block. Run the login first: it stores the
+# token in @token, which every request below reuses.
+#
+# Point @host at the live demo instead of localhost to try it without running
+# anything locally.
+
+@host = http://localhost:3000
+# @host = http://194.233.85.160:3000
+
+
+### Sign in
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@mozahid.com",
+  "password": "admin123"
+}
+
+###
+@token = {{login.response.body.accessToken}}
+
+
+### Who am I
+GET {{host}}/auth/profile
+Authorization: Bearer {{token}}
+
+
+### -------------------------------------------------------------- Products
+
+### List every product
+GET {{host}}/products
+Authorization: Bearer {{token}}
+
+
+### List only the ones on sale (what the counter uses)
+GET {{host}}/products?enabled=true
+Authorization: Bearer {{token}}
+
+
+### Create a product
+# @name createProduct
+POST {{host}}/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Milk Powder 500g",
+  "description": "Dairy - instant powder",
+  "price": 500,
+  "weight": 500
+}
+
+###
+@productId = {{createProduct.response.body.id}}
+
+
+### Edit it
+PATCH {{host}}/products/{{productId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "price": 520
+}
+
+
+### Hide it from the counter
+PATCH {{host}}/products/{{productId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "isEnabled": false
+}
+
+
+### ------------------------------------------------------------ Promotions
+
+### List promotions with their slabs
+GET {{host}}/promotions
+Authorization: Bearer {{token}}
+
+
+### Weighted - the worked example from the brief.
+### A 500g product: 12 units is 6000g, which lands in slab 2 at 3 tk each = 36 tk.
+POST {{host}}/promotions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Milk Powder Weighted Slabs",
+  "type": "WEIGHTED",
+  "startDate": "2026-01-01",
+  "endDate": "2026-12-31",
+  "productId": "{{productId}}",
+  "slabs": [
+    { "minWeight": 1000,  "maxWeight": 5500,  "discountPerUnit": 2 },
+    { "minWeight": 6000,  "maxWeight": 8500,  "discountPerUnit": 3 },
+    { "minWeight": 9000,  "maxWeight": 11500, "discountPerUnit": 4 },
+    { "minWeight": 12000,                     "discountPerUnit": 5 }
+  ]
+}
+
+
+### Percentage
+POST {{host}}/promotions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Ten percent off",
+  "type": "PERCENTAGE",
+  "startDate": "2026-01-01",
+  "endDate": "2026-12-31",
+  "productId": "{{productId}}",
+  "percentageValue": 10
+}
+
+
+### Fixed amount per unit
+POST {{host}}/promotions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Fifteen taka off",
+  "type": "FIXED",
+  "startDate": "2026-01-01",
+  "endDate": "2026-12-31",
+  "productId": "{{productId}}",
+  "fixedValue": 15
+}
+
+
+### Only the title and dates may change once a promotion exists
+PATCH {{host}}/promotions/PROMOTION_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Renamed promotion",
+  "endDate": "2026-11-30"
+}
+
+
+### Pause one
+PATCH {{host}}/promotions/PROMOTION_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "isEnabled": false
+}
+
+
+### ---------------------------------------------------------------- Orders
+
+### List orders with their line items
+GET {{host}}/orders
+Authorization: Bearer {{token}}
+
+
+### Place an order - expect subtotal 6000, discount 36, grand total 5964
+POST {{host}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerName": "Rahim Uddin",
+  "customerPhone": "01711223344",
+  "items": [
+    { "productId": "{{productId}}", "quantity": 12 }
+  ]
+}
+
+
+### ------------------------------------------------------- Rejected inputs
+
+### No token - 401
+GET {{host}}/products
+
+
+### Wrong password - 401, and the message never says which field was wrong
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@mozahid.com",
+  "password": "wrong"
+}
+
+
+### Quantity above the cap - 400
+POST {{host}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerName": "Test",
+  "customerPhone": "01700000000",
+  "items": [
+    { "productId": "{{productId}}", "quantity": 999999 }
+  ]
+}
+
+
+### Empty cart - 400
+POST {{host}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerName": "Test",
+  "customerPhone": "01700000000",
+  "items": []
+}

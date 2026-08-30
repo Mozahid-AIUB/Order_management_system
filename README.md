@@ -1,47 +1,35 @@
 # Order Management System
 
-A full-stack order management system with a promotion engine supporting percentage, fixed, and weight-based (slab) discounts.
+Order management with a promotion engine supporting percentage, fixed, and weight-based (slab) discounts.
 
-**Live demo:** http://194.233.85.160:3001 — sign in with `admin@mozahid.com` / `admin123`
+**Live demo:** http://194.233.85.160:3001 · `admin@mozahid.com` / `admin123`
 
-## Tech Stack
+## Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS |
+| Frontend | Next.js 16 (App Router), TypeScript, Tailwind CSS |
 | Backend | NestJS 11, TypeScript |
-| Database | PostgreSQL 16 with Prisma ORM |
-| Auth | JWT (Passport.js) with bcrypt password hashing |
+| Database | PostgreSQL 16, Prisma ORM |
+| Auth | JWT (Passport) with bcrypt hashing |
 
 ## Features
 
-**Authentication**
-- Sign-in page with email and password
-- JWT-based authentication; all product, promotion, and order endpoints are guarded
+**Authentication** — sign-in with email and password; every product, promotion, and order endpoint is guarded by JWT.
 
-**Product Management**
-- List, create, and edit products (name, description, price, weight)
-- Enable/disable products — disabled products do not appear on the order page
+**Products** — list, create, edit every field, and enable/disable. Disabled products stay in past orders but never appear at the counter.
 
-**Promotion Management**
-- List, create, enable/disable, and edit promotions
-- Editing is restricted to title and dates, as specified
-- Three discount types:
-  - **Percentage** — a percentage off the line total
-  - **Fixed** — a flat amount off per unit
-  - **Weighted** — slab-based, driven by the total weight in the cart
-- Weighted promotions accept any number of slabs, each with its own min/max weight and discount
+**Promotions** — list, create, pause/resume, and edit. Editing is limited to title and dates, as specified. Three types:
 
-**Order Management**
-- List orders and create new ones
-- Cart shows per-product discounts, subtotal, total discount, and grand total
-- Discounts are always recalculated on the server when an order is placed; the frontend calculation is a preview only
+- **Percentage** — a share of the line total
+- **Fixed** — a flat amount per unit
+- **Weighted** — slab-based, driven by the cart's total weight
 
-## How the Weighted Promotion Works
+**Orders** — list and create. The cart shows each product's discount, subtotal, total discount, and grand total. Opening a past order reveals its line items.
 
-A weighted promotion holds a list of slabs. Each slab defines a weight range and a discount per unit.
+## Weighted promotions
 
-Example — a 500g product with these slabs:
+A weighted promotion holds slabs. Each slab is a weight range with a discount per unit.
 
 | Slab | Weight range | Discount per 500g |
 |---|---|---|
@@ -50,97 +38,71 @@ Example — a 500g product with these slabs:
 | 3 | 9kg – 11.5kg | 4 tk |
 | 4 | 12kg and above | 5 tk |
 
-Adding 12 units of the 500g product gives a total weight of 6000g, which falls into slab 2. The discount is `3 × 12 = 36 tk`.
+Twelve units of a 500g product weigh 6000g, which lands in slab 2: `3 × 12 = 36 tk`.
 
-The slab lookup is fully dynamic — a promotion may define any number of slabs with arbitrary ranges, and the final slab may omit its maximum weight to mean "unlimited".
-
-## Prerequisites
-
-- Node.js 20 or later
-- PostgreSQL 16 running locally
-- npm
+A promotion may define any number of slabs with arbitrary ranges. Omitting the last slab's maximum means unlimited.
 
 ## Setup
 
-### 1. Clone and install
+Requires Node.js 20+, PostgreSQL 16, npm.
+
+**1. Install**
 
 ```bash
 git clone https://github.com/Mozahid-AIUB/Order_management_system.git
 cd Order_management_system
-
 cd backend && npm install
 cd ../frontend && npm install
 ```
 
-### 2. Create the database
+**2. Create a database** named `order_management`.
 
-Create a PostgreSQL database named `order_management` (via pgAdmin or `createdb order_management`).
-
-### 3. Configure backend environment
-
-Create `backend/.env`:
+**3. Configure** `backend/.env`:
 
 ```env
 DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/order_management?schema=public"
 JWT_SECRET="any-long-random-string"
 ```
 
-If your PostgreSQL password contains special characters, URL-encode them (for example `@` becomes `%40`).
+URL-encode special characters in the password — `@` becomes `%40`.
 
-### 4. Run migrations and seed the admin
+**4. Migrate and seed**
 
 ```bash
 cd backend
 npx prisma migrate dev
-npx ts-node prisma/seed.ts
+npm run seed          # admin account
+npm run seed:demo     # optional demo catalogue
 ```
 
-This creates all tables and seeds one admin account:
+`seed` creates `admin@mozahid.com` / `admin123`.
 
-- **Email:** `admin@mozahid.com`
-- **Password:** `admin123`
+`seed:demo` adds 68 products across nine categories and six promotions covering every type and state — weighted with four slabs, weighted with three, percentage, fixed, one paused, one expired. It skips itself if products already exist.
 
-### 5. Start both servers
-
-In one terminal:
+**5. Run**
 
 ```bash
-cd backend
-npm run start:dev     # http://localhost:3000
+cd backend && npm run start:dev     # :3000
+cd frontend && npm run dev          # :3001
 ```
 
-In another terminal:
+If 3001 is busy, Next.js takes the next port and the app still works: outside production the API accepts whichever origin asks, and the frontend calls the API on the host it was opened from.
 
-```bash
-cd frontend
-npm run dev           # http://localhost:3001
-```
-
-Open http://localhost:3001 and sign in with the seeded admin credentials.
-
-> The backend enables CORS for `http://localhost:3001` by default. If Next.js starts on a different port, set `CORS_ORIGIN` in `backend/.env`.
-
-## Running with Docker
-
-The compose file starts PostgreSQL, the API, and the web app together. Migrations run and the admin is seeded automatically on the first boot.
+## Docker
 
 ```bash
 docker compose up --build
 ```
 
-Then open http://localhost:3001 and sign in with `admin@mozahid.com` / `admin123`.
-
-Postgres is published on port **5433** so it does not clash with a PostgreSQL instance already running on 5432.
-
-To stop everything and wipe the database volume:
+Starts PostgreSQL, the API, and the web app. Migrations and the admin seed run on first boot. Postgres is published on **5433** to avoid clashing with a local instance.
 
 ```bash
-docker compose down -v
+docker compose down -v      # stop and wipe the volume
 ```
 
-### Deploying to a server
+### On a server
 
-Two addresses are baked in for the browser, so they must point at the server rather than localhost. Copy `.env.example` to `.env` and set:
+Two addresses are compiled into the browser bundle, so they must name the server. Copy `.env.example` to `.env`:
 
 ```env
 JWT_SECRET=a-long-random-string
@@ -149,69 +111,75 @@ NEXT_PUBLIC_API_URL=http://YOUR_SERVER_IP:3000
 CORS_ORIGIN=http://YOUR_SERVER_IP:3001
 ```
 
-Then build and start:
-
 ```bash
 docker compose up --build -d
 ```
 
-Open ports 3000 and 3001 on the server's firewall. `NEXT_PUBLIC_API_URL` is compiled into the client bundle, so changing it later means rebuilding the frontend image.
+Open ports 3000 and 3001 on the firewall. Changing `NEXT_PUBLIC_API_URL` later requires rebuilding the frontend image.
 
-The live demo runs this way on a Contabo VPS, deployed through [Coolify](https://coolify.io) with the Docker Compose build pack — the same `docker-compose.yml` in this repository, with the variables above supplied by the panel. Pushing to `main` triggers a rebuild.
+The live demo runs this way on a Contabo VPS via [Coolify](https://coolify.io), using this same compose file. Pushing to `main` triggers a rebuild.
 
-## API Endpoints
+## API
 
-All endpoints except `POST /auth/login` require an `Authorization: Bearer <token>` header.
+Runnable requests: [`api.http`](api.http) — open in VS Code with the [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) extension. Signing in stores the token for every request after it. Point `@host` at the live demo to skip local setup. Rejected cases are covered too: missing token, wrong password, oversized quantity, empty cart.
+
+All endpoints except `POST /auth/login` need `Authorization: Bearer <token>`.
 
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/auth/login` | Sign in, returns an access token |
-| GET | `/auth/profile` | Returns the authenticated admin |
-| GET | `/products` | List all products |
-| GET | `/products?enabled=true` | List only enabled products |
-| POST | `/products` | Create a product |
-| PATCH | `/products/:id` | Update a product or toggle its status |
-| GET | `/promotions` | List promotions with their slabs |
-| POST | `/promotions` | Create a promotion (slabs included for weighted) |
-| PATCH | `/promotions/:id` | Update title, dates, or status |
-| GET | `/orders` | List orders with their items |
-| POST | `/orders` | Create an order; discounts are calculated server-side |
+| GET | `/auth/profile` | The authenticated admin |
+| GET | `/products` | All products |
+| GET | `/products?enabled=true` | Only enabled products |
+| POST | `/products` | Create |
+| PATCH | `/products/:id` | Update fields or toggle status |
+| GET | `/promotions` | Promotions with their slabs |
+| POST | `/promotions` | Create, slabs included for weighted |
+| PATCH | `/promotions/:id` | Title, dates, or status |
+| GET | `/orders` | Orders with their items |
+| POST | `/orders` | Create; discounts calculated server-side |
 
-## Project Structure
+## Structure
 
 ```
-.
-├── backend/                 # NestJS API
-│   ├── prisma/
-│   │   ├── schema.prisma    # Data model
-│   │   ├── migrations/
-│   │   └── seed.ts          # Seeds the admin account
-│   └── src/
-│       ├── auth/            # Login, JWT strategy, guard
-│       ├── products/
-│       ├── promotions/
-│       ├── orders/          # Includes the discount calculation
-│       └── prisma/          # Shared Prisma service
-│
-├── frontend/                # Next.js app
-│   └── src/
-│       ├── app/
-│       │   ├── login/
-│       │   ├── products/
-│       │   ├── promotions/
-│       │   └── orders/
-│       ├── components/
-│       └── lib/api.ts       # API client
-│
-└── docs/                    # Architecture notes
+backend/
+  prisma/
+    schema.prisma        data model
+    seed.ts              admin account
+    demo-seed.ts         demo catalogue
+  src/
+    auth/                login, JWT strategy, guard
+    products/
+    promotions/
+    orders/              discount calculation
+    prisma/              shared Prisma service
+
+frontend/src/
+  app/
+    login/
+    products/
+    promotions/
+    orders/              the counter
+      history/           past orders
+  components/            sidebar
+  lib/api.ts             API client
+
+docs/
+  ARCHITECTURE.md        design notes
+  INFRASTRUCTURE.md      server and deployment notes
+
+api.http                 REST Client requests
+docker-compose.yml
 ```
 
-## Design Notes
+## Design notes
 
-**Discounts are calculated on the server.** The cart previews discounts client-side for immediate feedback, but `POST /orders` ignores any amounts sent by the client and recalculates everything from the database.
+**Discounts are calculated server-side.** The cart previews them for instant feedback, but `POST /orders` ignores anything the client sends and recalculates from the database.
 
-**Order items store a price snapshot.** Each `OrderItem` records the unit price at the time of purchase, so past orders remain accurate when product prices change.
+**Order items store a price snapshot.** Each `OrderItem` records the unit price and discount applied at purchase time, so past orders stay accurate when prices change. That is also why `productId` there is a plain column rather than a foreign key — deleting a product must not cascade into order history.
 
-**Order creation avoids N+1 queries.** Products and active promotions for the whole cart are fetched in two queries and looked up in memory, rather than querying per cart line.
+**Order creation avoids N+1 queries.** Products and active promotions for the whole cart are fetched in two queries and matched in memory, so a twenty-line cart costs two round trips rather than forty.
 
-**Slabs live in their own table.** `PromotionSlab` is a separate model rather than a JSON column, which keeps slabs queryable and lets the database enforce the relationship. Deleting a promotion cascades to its slabs.
+**Slabs live in their own table.** `PromotionSlab` is a model rather than a JSON column, which keeps the relationship enforced and the slab count unbounded. Deleting a promotion cascades to its slabs.
+
+**Weights are integers in grams.** Slab matching is exact integer comparison, with no floating-point drift. Money uses `Decimal` for the same reason.
