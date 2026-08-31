@@ -30,6 +30,16 @@ services:
       PORT: 3000
     ports:
       - "3000:3000"
+    healthcheck:
+      # There is no dedicated /health route, and a 404 from the router already
+      # proves Nest is up and answering, so anything under 500 counts as alive.
+      # The check runs through node because the alpine image carries no curl.
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      # Migrations and the admin seed run before the server listens.
+      start_period: 60s
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,6 +52,14 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
     ports:
       - "3001:3001"
+    healthcheck:
+      # /login is the one page that renders without a token, so it is the
+      # honest signal that Next.js is serving rather than merely running.
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3001/login', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
       - backend
 
