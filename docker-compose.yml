@@ -6,7 +6,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "5433:5432"
+      # Bound to loopback: the API reaches Postgres over the compose network,
+      # so publishing it to every interface would only expose the database.
+      # 5433 avoids clashing with a PostgreSQL already running on the host.
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
