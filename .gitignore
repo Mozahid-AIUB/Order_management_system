@@ -6,3 +6,7 @@
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Private server notes - not for the public repo
+docs/INFRASTRUCTURE.md
+docs/TODO.md

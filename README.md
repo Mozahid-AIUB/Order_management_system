@@ -166,7 +166,6 @@ frontend/src/
 
 docs/
   ARCHITECTURE.md        design notes
-  INFRASTRUCTURE.md      server and deployment notes
 
 api.http                 REST Client requests
 docker-compose.yml
